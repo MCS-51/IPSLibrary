@@ -22,7 +22,8 @@
 	 * @file          IPSShadowing_Device.class.php
 	 * @author        Andreas Brauneis
 	 * @version
-	 * Version 2.50.1, 21.03.2012<br/>
+	 *   Version 2.50.1, 21.03.2012<br/>
+	 *   Version 2.50.2, 29.12.2012  Added Reset of Flags after Change of Day/Night<br/>
 	 *
 	 * Funktionen zum Bewegen der Beschattung 
 	 */
@@ -204,6 +205,12 @@
 				case c_ProgramId_75:
 					$DoBeMoved = c_MovementId_75;
 					break;
+				case c_ProgramId_50:
+					$DoBeMoved = c_MovementId_50;
+					break;
+				case c_ProgramId_25:
+					$DoBeMoved = c_MovementId_25;
+					break;
 				case c_ProgramId_Dimout:
 					$DoBeMoved = c_MovementId_Dimout;
 					break;
@@ -217,13 +224,17 @@
 						$DoBeMoved = c_MovementId_Shadowing;
 					}
 					break;
+				case c_ProgramId_LastPosition:
+					$DoBeMoved = $this->GetVariableValue(c_Control_TempLastPos);
+					break;
 				default:
-					IPSLogger_Err(__file__, "Unknown Program $Program, DeviceId=".$this->DeviceId);
+					IPSLogger_Err(__file__, "Unknown ProgramId $ProgramId, DeviceId=".$this->DeviceId);
 					exit;
 			}
 			if ($DoBeMoved<>$MovementStatus) {
 				if ($TriggeredByTemp and !$this->GetVariableValue(c_Control_TempChange)) {
 					$this->SetVariableValue(c_Control_TempChange, true);
+					$this->SetVariableValue(c_Control_TempLastPos, $this->GetMovementIdByPosition());
 				}
 				$this->SetVariableValue(c_Control_Movement, $DoBeMoved);
 				$this->MoveByStatus();
@@ -231,6 +242,40 @@
 			}
 		}
 
+		// ----------------------------------------------------------------------------------------------------------------------------
+		private function GetMovementIdByPosition() {
+			$shadowingType     = $this->GetPropertyValue(c_Property_ShadowingType);
+			$currentMovementId = $this->GetVariableValue(c_Control_Movement);
+			$currentPosition   = $this->GetVariableValue(c_Control_Position);
+
+			if ($currentMovementId<>c_MovementId_Stop) {
+				$lastPosition = $currentMovementId;
+			} elseif ($currentPosition<10) {
+				if ($shadowingType==c_ShadowingType_Marquees) {
+					$lastPosition = c_MovementId_MovedIn;
+				} else {
+					$lastPosition = c_MovementId_Opened;
+				}
+			} elseif ($currentPosition<30) {
+				$lastPosition = c_MovementId_25;
+			} elseif ($currentPosition<55) {
+				$lastPosition = c_MovementId_50;
+			} elseif ($currentPosition<80) {
+				$lastPosition = c_MovementId_75;
+			} elseif ($currentPosition<92) {
+				$lastPosition = c_MovementId_90;
+			} else {
+				if ($shadowingType==c_ShadowingType_Marquees) {
+					$lastPosition = c_MovementId_MovedOut;
+				} elseif ($shadowingType==c_ShadowingType_Shutter) {
+					$lastPosition = c_MovementId_Closed;
+				} else {
+					$lastPosition = c_MovementId_Shadowing;
+				}
+			}
+			return $lastPosition;
+		}
+		
 		// ----------------------------------------------------------------------------------------------------------------------------
 		public function MoveByControl($Value) {
 			if ($Value==c_MovementId_Space) {
@@ -466,6 +511,7 @@
 
 		// ----------------------------------------------------------------------------------------------------------------------------
 		public function CheckPrograms($profileManager) {
+			$deviceName        = IPS_GetIdent($this->deviceId);
 			$profileIdTemp     = GetValue(IPS_GetObjectIDByIdent(c_Control_ProfileTemp, $this->deviceId));
 			$profileIdSun      = GetValue(IPS_GetObjectIDByIdent(c_Control_ProfileSun, $this->deviceId));
 			$profileIdBgnOfDay = GetValue(IPS_GetObjectIDByIdent(c_Control_ProfileBgnOfDay, $this->deviceId));
@@ -476,12 +522,9 @@
 			$programDay        = GetValue(IPS_GetObjectIDByIdent(c_Control_ProgramDay, $this->deviceId));
 			$programNight      = GetValue(IPS_GetObjectIDByIdent(c_Control_ProgramNight, $this->deviceId));
 			$programWeather    = null;
-			$changeByTemp      = GetValue(IPS_GetObjectIDByIdent(c_Control_TempChange, $this->deviceId));
-			$changeByUser      = GetValue(IPS_GetObjectIDByIdent(c_Control_ManualChange, $this->deviceId));
 			$automaticActive   = GetValue(IPS_GetObjectIDByIdent(c_Control_Automatic, $this->deviceId));
-
 			$tempIndoorPath    = $this->GetPropertyValue(c_Property_TempSensorIndoor);
-			
+
 			$controlId = @IPS_GetObjectIDByIdent(c_Control_ProfileWeather, $this->deviceId);
 			if ($controlId!==false) {
 				$profileIdWeather  = GetValue($controlId);
@@ -489,11 +532,30 @@
 			}
 
 			$isDay               = $profileManager->IsDay($profileIdBgnOfDay, $profileIdEndOfDay);
+			$isDayNightChange    = $profileManager->IsDayNightChange($profileIdBgnOfDay, $profileIdEndOfDay);
 			$closeByTemp         = $profileManager->CloseByTemp($profileIdSun, $profileIdTemp, $tempIndoorPath);
 			$shadowingByTemp     = $profileManager->ShadowingByTemp($profileIdSun, $profileIdTemp, $tempIndoorPath);
 			$openByTemp          = $profileManager->OpenByTemp($profileIdSun, $profileIdTemp, $tempIndoorPath);
 			$activationByWeather = $profileManager->ActivationByWeather($profileIdWeather);
 
+
+			// Reset Manual Change Flag
+			if ($isDayNightChange) {
+				if (GetValue(IPS_GetObjectIDByIdent(c_Control_ManualChange, $this->deviceId))) {
+					IPSLogger_Dbg(__file__, "Reset ManualChange Flag for Device '$deviceName'");
+					SetValue(IPS_GetObjectIDByIdent(c_Control_ManualChange, $this->deviceId), false);
+				}
+				if (GetValue(IPS_GetObjectIDByIdent(c_Control_TempChange, $this->deviceId))) {
+					IPSLogger_Dbg(__file__, "Reset TempChange Flag for Device '$deviceName'");
+					SetValue(IPS_GetObjectIDByIdent(c_Control_TempChange, $this->deviceId), false);
+				}
+			}
+
+			$changeByTemp      = GetValue(IPS_GetObjectIDByIdent(c_Control_TempChange, $this->deviceId));
+			$changeByUser      = GetValue(IPS_GetObjectIDByIdent(c_Control_ManualChange, $this->deviceId));
+
+			// Check all Programs
+			// --------------------------------------------------------------------------------
 			// Automatic Off ...
 			if (!$automaticActive) {
 				$programInfo = 'Automatic Off';
@@ -545,9 +607,14 @@
 				if (!$openByTemp and $changeByTemp) {
 					$programInfo = 'Tag (Warte Öffnen)';
 				} elseif ($openByTemp and $changeByTemp) {
-					$programInfo = 'Tag (Reset)';
 					SetValue(IPS_GetObjectIDByIdent(c_Control_TempChange, $this->deviceId), false);
-					$this->MoveByProgram($programDay, 'Tagesprogramm (Temperatur Reset)');
+					if ($programDay<>c_ProgramId_Manual) {
+						$programInfo = 'Temperatur Reset (Tag)';
+						$this->MoveByProgram($programDay, 'Temperatur Reset (Tag)');
+					} else {
+						$programInfo = 'Temperatur Reset (LastPosition)';
+						$this->MoveByProgram(c_ProgramId_LastPosition, 'Temperatur Reset (LastPosition)');
+					}
 				} else {
 					$programInfo = 'Tagesprogramm';
 					$this->MoveByProgram($programDay, 'Tagesprogramm');

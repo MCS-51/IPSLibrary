@@ -39,6 +39,19 @@
 		/**
 		 * @public
 		 *
+		 * Funktion liefert String IPSComponent Constructor String.
+		 * String kann dazu benützt werden, das Object mit der IPSComponent::CreateObjectByParams
+		 * wieder neu zu erzeugen.
+		 *
+		 * @return string Parameter String des IPSComponent Object
+		 */
+		public function GetComponentParams() {
+			return get_class($this).','.$this->instanceId;
+		}
+
+		/**
+		 * @public
+		 *
 		 * Function um Events zu behandeln, diese Funktion wird vom IPSMessageHandler aufgerufen, um ein aufgetretenes Event 
 		 * an das entsprechende Module zu leiten.
 		 *
@@ -55,9 +68,13 @@
 		 * Zustand Setzen 
 		 *
 		 * @param boolean $value Wert für Schalter
+		 * @param integer $onTime Zeit in Sekunden nach der der Aktor automatisch ausschalten soll (nicht unterstützt)
 		 */
-		public function SetState($value) {
-			IPSLogger_Trc(__file__, 'Activate Dummy-Switch "'.$this->instanceId.'", Value='.($value?'On':'Off'));
+		public function SetState($value, $onTime=false) {
+			if ($onTime!==false and $value) 
+				IPSLogger_Trc(__file__, 'Activate Dummy-Switch "'.$this->instanceId.'", Value='.($value?'On':'Off').', OnTime='.$onTime);
+			else
+				IPSLogger_Trc(__file__, 'Activate Dummy-Switch "'.$this->instanceId.'", Value='.($value?'On':'Off'));
 		}
 
 		/**

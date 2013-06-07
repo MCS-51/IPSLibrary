@@ -225,6 +225,16 @@
 			return !$this->IsDay($profileIdBgnOfDay, $profileIdEndOfDay);
 		}
 		
+		public function IsDayNightChange($profileIdBgnOfDay, $profileIdEndOfDay) {
+			$profileBgnOfDay = $this->profilesBgnOfDay[$profileIdBgnOfDay];
+			$profileEndOfDay = $this->profilesEndOfDay[$profileIdEndOfDay];
+			$timeCurrent = time();
+			$timeLast    = time()-300;
+
+			return (($timeCurrent > $profileBgnOfDay->GetTime() and  $timeLast < $profileBgnOfDay->GetTime()) or 
+			        ($timeCurrent > $profileEndOfDay->GetTime() and  $timeLast < $profileEndOfDay->GetTime()));
+		}
+
 		public function GetPresent() {
 			return $this->present;
 		}
@@ -264,8 +274,8 @@
 			SetValue(IPS_GetObjectIDByIdent(c_Control_ProfileEndOfDaySelect, $this->instanceId), $profileId);
 		}
 
-		public function CreateTemp($profileName='Neues Profile', $tempDiffShadowing=0, $tempDiffClose=1, $tempDiffOpening=1, $brightness=6000) {
-			$profileId = IPSShadowing_ProfileTemp::Create($profileName, $tempDiffShadowing, $tempDiffClose, $tempDiffOpening, $brightness);
+		public function CreateTemp($profileName='Neues Profile') {
+			$profileId = IPSShadowing_ProfileTemp::Create($profileName);
 			$this->SelectTemp($profileId);
 		}
 		public function CreateSun($profileName='Neues Profile', $anzimutBgn=120, $anzimutEnd=240, $elevation=25) {

@@ -49,6 +49,18 @@
 		 */
 		private $instanceId;
 
+		/**
+		 * @private
+		 * Retry Count Senden
+		 */
+		private $retryCount;
+
+		/**
+		 * @private
+		 * Debugging of AudioMax Server Enabled/Disabled
+		 */
+		private $debugEnabled;
+
 		/** 
 		 * @public
 		 *
@@ -57,23 +69,87 @@
 		 * @param integer $instanceId - ID des AudioMax Server.
 		 */
 		public function __construct($instanceId) {
-			$this->instanceId = $instanceId;
+			$this->instanceId   = $instanceId;
+			$this->debugEnabled = GetValue(IPS_GetObjectIDByIdent(AM_VAR_MODESERVERDEBUG, $this->instanceId));
+			$this->retryCount  = 0;
 		}
 
 		/**
 		 * @private
 		 *
-		 * Protokollierung eines Fehlers
+		 * Protokollierung einer Meldung im AudioMax Log
 		 *
-		 * @param string $errorText Fehlermeldung
+		 * @param string $logType Type der Logging Meldung 
+		 * @param string $msg Meldung 
 		 */
-		private function SetErrorText($errorText) {
+		private function Log ($logType, $msg) {
+			if ($this->debugEnabled) {
+				IPSLogger_WriteFile("", 'AudioMax.log', date('Y-m-d H:i:s').'  '.$logType.' - '.$msg, null);
+			}
+		}
+		
+		/**
+		 * @private
+		 *
+		 * Protokollierung einer Error Meldung
+		 *
+		 * @param string $msg Meldung 
+		 */
+		private function LogErr($msg) {
+			IPSLogger_Err(__file__, $msg);
+			$this->Log('Err', $msg);
 			$variableId  = IPS_GetObjectIDByIdent(AM_VAR_LASTERROR, $this->instanceId);
-			SetValue($variableId, $errorText);
-			
-			IPSLogger_Err(__file__, $errorText);
+			SetValue($variableId, $msg);
+		}
+		
+		/**
+		 * @private
+		 *
+		 * Protokollierung einer Info Meldung
+		 *
+		 * @param string $msg Meldung 
+		 */
+		private function LogInf($msg) {
+			IPSLogger_Inf(__file__, $msg);
+			$this->Log('Inf', $msg);
+		}
+		
+		/**
+		 * @private
+		 *
+		 * Protokollierung einer Debug Meldung
+		 *
+		 * @param string $msg Meldung 
+		 */
+		private function LogDbg($msg) {
+			IPSLogger_Dbg(__file__, $msg);
+			$this->Log('Dbg', $msg);
 		}
 
+		/**
+		 * @private
+		 *
+		 * Protokollierung einer Kommunikations Meldung
+		 *
+		 * @param string $msg Meldung 
+		 */
+		private function LogCom($msg) {
+			IPSLogger_Com(__file__, $msg);
+			$this->Log('Com', $msg);
+		}
+		
+		/**
+		 * @private
+		 *
+		 * Protokollierung einer Trace Meldung
+		 *
+		 * @param string $msg Meldung 
+		 */
+		private function LogTrc($msg) {
+			IPSLogger_Trc(__file__, $msg);
+			$this->Log('Trc', $msg);
+		}
+		
 		/**
 		 * @public
 		 *
@@ -86,7 +162,7 @@
 			$variableId  = IPS_GetObjectIDByIdent(AM_VAR_CONNECTION, $this->instanceId);
 			SetValue($variableId, $value);
 
-			IPSLogger_Inf(__file__, 'Set AudioMax Connection Status to '.($value ? 'Connection Active' : 'Connection Inactiv'));
+			$this->LogInf('Set AudioMax Connection Status to '.($value ? 'Connection Active' : 'Connection Inactiv'));
 
 			$comPortId = GetValue(IPS_GetObjectIDByIdent('PORT_ID', $this->instanceId));
 			COMPort_SetOpen($comPortId, $value);
@@ -147,7 +223,7 @@
 		 */
 		private function ValidateAndSetValue ($type, $command, $roomId, $function, $value) {
 			if ($this->ValidateData($type, $command, $roomId, $function, $value)) {
-			   $this->SetValue($type, $command, $roomId, $function, $value);
+				$this->SetValue($type, $command, $roomId, $function, $value);
 			}
 		}
 
@@ -175,27 +251,34 @@
 				case AM_CMD_POWER:
 					$variableId  = IPS_GetObjectIDByIdent(AM_VAR_MAINPOWER, $this->instanceId);
 					if (GetValue($variableId)<>$value) {
-				 		SetValue($variableId, $value);
-					   $modification = true;
+						SetValue($variableId, $value);
+						$modification = true;
 					}
 					break;
 				case AM_CMD_TEXT:
 					break;
 				case AM_CMD_MODE:
-				   if ($function==AM_MOD_SERVERDEBUG) {
+					if ($function==AM_MOD_SERVERDEBUG) {
 						$variableId  = IPS_GetObjectIDByIdent(AM_VAR_MODESERVERDEBUG, $this->instanceId);
 						if (GetValue($variableId)<>$value) {
 					 		SetValue($variableId, $value);
-						   $modification = true;
+							$modification = true;
 						}
-				   }
-				   if ($function==AM_MOD_POWERREQUEST) {
+					}
+					if ($function==AM_MOD_POWERREQUEST) {
 						$variableId  = IPS_GetObjectIDByIdent(AM_VAR_MODEPOWERREQUEST, $this->instanceId);
 						if (GetValue($variableId)<>$value) {
-					 		SetValue($variableId, $value);
-						   $modification = true;
+							SetValue($variableId, $value);
+							$modification = true;
 						}
-				   }
+					}
+					if ($function==AM_MOD_ACKNOWLEDGE) {
+						$variableId  = IPS_GetObjectIDByIdent(AM_VAR_MODEACKNOWLEDGE, $this->instanceId);
+						if (GetValue($variableId)<>$value) {
+							SetValue($variableId, $value);
+							$modification = true;
+						}
+					}
 					break;
 				case AM_CMD_ROOM:
 					$room = $this->GetAudioMaxRoom($roomId);
@@ -209,7 +292,7 @@
 					}
 					break;
 				case AM_CMD_AUDIO:
-				   if ($function==AM_FNC_VOLUME)      $value=AM_VAL_VOLUME_MAX-$value;
+					if ($function==AM_FNC_VOLUME)      $value=AM_VAL_VOLUME_MAX-$value;
 					$room = $this->GetAudioMaxRoom($roomId);
 					if ($room===false) {
 						$modification = true;
@@ -224,7 +307,7 @@
 					$modification = true;
 					break;
 				default:
-					IPSLogger_Err(__file__, 'Unknown Command '.$command);
+					$this->LogErr('Unknown Command '.$command);
 			}
 			if ($modification) {
 				SetValue(IPS_GetObjectIDByIdent(AM_VAR_LASTCOMMAND, $this->instanceId), $this->BuildMsg($type, $command, $roomId, $function, $value, false));
@@ -267,7 +350,7 @@
 						}
 						break;
 					default:
-						IPSLogger_Err(__file__, 'Unknown Command '.$command);
+						$this->LogErr('Unknown Command '.$command);
 				}
 			}
 			return $result;
@@ -279,7 +362,7 @@
 		 * Setzt die AudioMax Variablen Werte auf den DEFAULT Wert zurück.
 		 */
 		public function Reset () {
-			IPSLogger_Dbg(__file__, "Execute AudioMax Reset ...");
+			$this->LogDbg("Execute AudioMax Reset ...");
 			$this->SetValue(AM_TYP_SET, AM_CMD_POWER, null, null, AM_VAL_POWER_DEFAULT);
 
 			$roomCount  = GetValue(IPS_GetObjectIDByIdent(AM_VAR_ROOMCOUNT, $this->instanceId));
@@ -290,7 +373,7 @@
 				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_BASS,        AM_VAL_BASS_DEFAULT);
 				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_VOLUME,      AM_VAL_VOLUME_DEFAULT);
 				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_MUTE,        AM_VAL_MUTE_DEFAULT);
-				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_BALANCE, 	  AM_VAL_BALANCE_DEFAULT);
+				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_BALANCE,     AM_VAL_BALANCE_DEFAULT);
 				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_INPUTSELECT, AM_VAL_INPUTSELECT_DEFAULT);
 				$this->SetValue(AM_TYP_SET, AM_CMD_AUDIO, $roomId, AM_FNC_INPUTGAIN,   AM_VAL_INPUTGAIN_DEFAULT);
 			}
@@ -302,7 +385,7 @@
 		 * Initialisiert den AudioMax Server und setzt alle Einstellungen auf den aktuellen Wert von IPS zurück.
 		 */
 		public function Initialize () {
-			IPSLogger_Dbg(__file__, "Execute AudioMax Initialization ...");
+			$this->LogDbg("Execute AudioMax Initialization ...");
 
 			$this->SendData(AM_TYP_SET, AM_CMD_POWER, null, null, GetValue(IPS_GetObjectIDByIdent(AM_VAR_MAINPOWER, $this->instanceId)));
 
@@ -327,9 +410,11 @@
 		 * Setzt das BUSY Flag des AudioMax Server
 		 */
 		private function SetBusy() {
-			$result = IPS_SemaphoreEnter('AudioMax', 1000);
-			$VariableId = IPS_GetObjectIDByIdent(AM_VAR_BUSY, $this->instanceId);
-			SetValue($VariableId, true);
+			$result = IPS_SemaphoreEnter('AudioMax', 3000);
+			if ($result===true) {
+				$VariableId = IPS_GetObjectIDByIdent(AM_VAR_BUSY, $this->instanceId);
+				SetValue($VariableId, true);
+			}
 			return $result;
 		}
 
@@ -377,7 +462,7 @@
 						$msg .= AM_COM_SEPARATOR.$roomId.AM_COM_SEPARATOR.$function;
 						break;
 					default:
-						$this->SetErrorText("Unable to build Message - unknown Command  '.$command'");
+						$this->LogErr("Unable to build Message - unknown Command  '.$command'");
 					   exit;
 				}
 			} else {
@@ -400,7 +485,7 @@
 						$msg .= $value;
 						break;
 					default:
-						$this->SetErrorText("Unable to build Message - unknown Command  '.$command'");
+						$this->LogErr("Unable to build Message - unknown Command  '.$command'");
 					   exit;
 				}
 			}
@@ -489,7 +574,7 @@
 					$errorMsg = "Unknonw Command '$command'";
 			}
 			if (!$result) {
-				$this->SetErrorText($errorMsg);
+				$this->LogErr($errorMsg);
 			}
 			return $result;
 		}
@@ -511,19 +596,19 @@
 		   $result = false;
 
 			if (GetValue(IPS_GetObjectIDByIdent(AM_VAR_CONNECTION, $this->instanceId))) {
-				IPSLogger_Com(__file__, 'Snd Message: '.$this->BuildMsg($type, $command, $roomId, $function, $value, false));
+				$this->LogCom('Snd Message: '.$this->BuildMsg($type, $command, $roomId, $function, $value, false));
 				$comPortId = GetValue(IPS_GetObjectIDByIdent('PORT_ID', $this->instanceId));
 				$msg = $this->BuildMsg($type, $command, $roomId, $function, $value);
 				$result = @COMPort_SendText($comPortId, $msg);
 				if ($result===false) {
-					IPSLogger_Dbg(__file__, 'Write to ComPort failed --> Try Reconnect');
+					$this->LogDbg('Write to ComPort failed --> Try Reconnect');
 					COMPort_SetOpen($comPortId,false);
 					COMPort_SetOpen($comPortId,true);
 					IPS_ApplyChanges($comPortId);
 					$result = COMPort_SendText($comPortId, $msg);
 				}
 			} else {
-				IPSLogger_Com(__file__, 'Snd Message: '.$this->BuildMsg($type, $command, $roomId, $function, $value, false).' (Connection Inactive - Msg will be ignored)!');
+				$this->LogCom('Snd Message: '.$this->BuildMsg($type, $command, $roomId, $function, $value, false).' (Connection Inactive - Msg will be ignored)!');
 				$result = true;
 			}
 
@@ -535,42 +620,75 @@
 		 *
 		 * Warten auf die Anwort vom Server
 		 *
-	    * @param string $type Kommando Type
-	    * @param string $command Kommando
-	    * @param integer $roomId Raum (0-15)
-	    * @param string $function Funktion
-	    * @param string $value Wert
-	    * @return boolean TRUE für OK, FALSE bei Fehler
+		 * @param string $type Kommando Type
+		 * @param string $command Kommando
+		 * @param integer $roomId Raum (0-15)
+		 * @param string $function Funktion
+		 * @param string $value Wert
+		 * @return boolean TRUE für OK, FALSE bei Fehler
 		 */
 		private function WaitForServerResponse($type, $command, $roomId, $function, $value) {
-		   $result = false;
+			$result = false;
+			$error  = '';
 
 			$inputBufferId = IPS_GetObjectIDByIdent(AM_VAR_INPUTBUFFER, $this->instanceId);
 			$waited = 0;
 			while ($waited < AM_COM_MAXWAIT) {
-			   IPS_Sleep(AM_COM_WAIT);
-			   $waited  = $waited + AM_COM_WAIT;
-			   $message = GetValue($inputBufferId);
-			   if ($message<>'') {
-			   	$waited = AM_COM_MAXWAIT;
+				IPS_Sleep(AM_COM_WAIT);
+				$waited  = $waited + AM_COM_WAIT;
+				$message = GetValue($inputBufferId);
+				if ($message<>'') {
+					$waited = AM_COM_MAXWAIT;
 					$params  = explode(AM_COM_SEPARATOR, $message);
-					if ($params[2] == AM_CMD_POWER) {
-					   $result = $value==$params[3];
+					if ($message==AM_VAL_ACKNOWLEDGE) {
+						if (GetValue(IPS_GetObjectIDByIdent(AM_VAR_MODEACKNOWLEDGE, $this->instanceId))==1) {
+							$result = true;
+						} else {
+							$result = false;
+							$error  = 'Ack Mode NOT Active';
+						}
+					} elseif ($message==AM_ERR_UNKNOWNCMD1) {
+						$result = false;
+						$error  = 'Unknown Command Part 1';
+					} elseif ($message==AM_ERR_UNKNOWNCMD2) {
+						$result = false;
+						$error  = 'Unknown Command Part 2';
+					} elseif ($message==AM_ERR_UNKNOWNCMD3) {
+						$result = false;
+						$error  = 'Unknown Command Part 3';
+					} elseif ($message==AM_ERR_UNKNOWNCMD4) {
+						$result = false;
+						$error  = 'Out of Range Part 4';
+					} elseif ($message==AM_ERR_UNKNOWNCMD5) {
+						$result = false;
+						$error  = 'Out of Range Part 5';
+					} elseif ($params[2] == AM_CMD_POWER) {
+						$result = $value==$params[3];
 					} elseif ($params[2] == AM_CMD_KEEPALIVE) {
-					   $result = $value==$params[3];
+						$result = $value==$params[3];
 					} elseif ($params[2] == AM_CMD_ROOM) {
-					   $result = $roomId==$params[3] and $value==$params[4];
+						$result = $roomId==$params[3] and $value==$params[4];
 					} elseif ($params[2] == AM_CMD_AUDIO) {
-					   $result = $roomId==$params[3] and $function==$params[4] and $value==$params[5];
+						$result = $roomId==$params[3] and $function==$params[4] and $value==$params[5];
 					} elseif ($params[2] == AM_CMD_MODE) {
-					   $result = $function==$params[3] and $value==$params[4];
+						$result = $function==$params[3] and $value==$params[4];
 					} else {
-						$this->SetErrorText('Received invalid Acknowledge from Server: '.$message);
-					   $result = false;
+						$result = false;
 					}
-			   }
+				} else {
+					$error = 'Timeout';
+				}
 			}
-
+			if (!$result) {
+				if ($error<>'') {
+					$error = ' ('.$error.')';
+				}
+				if ($this->retryCount==AM_COM_MAXRETRIES) {
+					$this->LogErr('Received invalid Acknowledge from Server: '.$message.$error);
+				} else {
+					$this->LogTrc('Received invalid Acknowledge from Server: '.$message.$error);
+				}
+			}
 			return $result;
 		}
 
@@ -589,7 +707,7 @@
 		public function SendData($type, $command, $roomId, $function, $value) {
 		   $result = false;
 
-		   if ($type==AM_TYP_GET and $this->GetAudioMaxRoomVariablesEnabled()) {
+			if ($type==AM_TYP_GET and $this->GetAudioMaxRoomVariablesEnabled()) {
 				if ($this->ValidateData($type, $command, $roomId, $function, $value)) {
 					$result = $this->GetValue($type, $command, $roomId, $function);
 				}
@@ -597,35 +715,37 @@
 		   }
 		
 			if ($this->SetBusy()) {
-				IPSLogger_Dbg(__file__, "Process Type='$type', Command='$command', Function='$function' and Value='$value' for Room $roomId");
+				$this->LogTrc("Process Type='$type', Command='$command', Function='$function' and Value='$value' for Room $roomId");
 				if ($this->ValidateData($type, $command, $roomId, $function, $value)) {
 					SetValue(IPS_GetObjectIDByIdent(AM_VAR_INPUTBUFFER, $this->instanceId), '');
 
 					$result = $this->SendDataComPort($type, $command, $roomId, $function, $value);
 					if ($result) {
-					   if (GetValue(IPS_GetObjectIDByIdent(AM_VAR_MODEEMULATESTATE, $this->instanceId))) {
+						if (GetValue(IPS_GetObjectIDByIdent(AM_VAR_MODEEMULATESTATE, $this->instanceId))) {
 							$this->SetValue($type, $command, $roomId, $function, $value);
+							IPS_Sleep(AM_COM_WAIT);
 						} elseif (!GetValue(IPS_GetObjectIDByIdent(AM_VAR_CONNECTION, $this->instanceId))) {
 							$this->SetValue($type, $command, $roomId, $function, $value);
-					   } else {
-							$retryCount = 1;
-							while ($retryCount<=AM_COM_MAXRETRIES) {
+						} else {
+							$this->retryCount = 1;
+							while ($this->retryCount<=AM_COM_MAXRETRIES) {
 								if ($this->WaitForServerResponse($type, $command, $roomId, $function, $value)) {
 									$this->SetValue($type, $command, $roomId, $function, $value);
-									$retryCount = AM_COM_MAXRETRIES;
+									$this->retryCount = AM_COM_MAXRETRIES;
 								} else {
-									IPSLogger_Dbg(__file__, 'Timeout or invalid Response while waiting for Server Response --> Resend Message (Retry='.$retryCount.')');
+									$this->LogTrc('Timeout or invalid Response while waiting for Server Response (Retry='.$this->retryCount.') --> Resend Message '.
+									              $this->BuildMsg($type, $command, $roomId, $function, $value, false));
 									SetValue(IPS_GetObjectIDByIdent(AM_VAR_INPUTBUFFER, $this->instanceId), '');
 									$result = $this->SendDataComPort($type, $command, $roomId, $function, $value);
 								}
-								$retryCount = $retryCount + 1;
-					   	}
-					   }
+								$this->retryCount++;
+							}
+						}
 					}
 				}
 				$this->ResetBusy();
 			} else {
-				$this->SetErrorText("AudioMax is already BUSY, ignore Message".$this->BuildMsg($type, $command, $roomId, $function, $value, false));
+				$this->LogErr("AudioMax is already BUSY, ignore Message".$this->BuildMsg($type, $command, $roomId, $function, $value, false));
 			}
 			return $result;
 		}
@@ -644,28 +764,37 @@
 
 			if ($message=='') return;
 
-			IPSLogger_Com(__file__, 'Rcv Message: '.$message);
+			$this->LogCom('Rcv Message: '.$message);
 			switch ($params[0]) {
-			   case AM_TYP_EVT:
+				case AM_TYP_EVT:
 					if ($params[2] == AM_CMD_POWER) {
-
-					} elseif ($params[2] == AM_CMD_KEEPALIVE) {
-						SetValue(IPS_GetObjectIDByIdent(AM_VAR_KEEPALIVEFLAG, $this->instanceId), true);
 						$this->ValidateAndSetValue(AM_TYP_SET, AM_CMD_POWER, null, null, $params[3]);
+					} elseif ($params[2] == AM_CMD_MODE) {
+						$this->ValidateAndSetValue(AM_TYP_SET, AM_CMD_MODE, null, $params[3], $params[4]);
+					} elseif ($params[2] == AM_CMD_KEEPALIVE) {
+						SetValue(IPS_GetObjectIDByIdent(AM_VAR_KEEPALIVECOUNT, $this->instanceId), 0);
 					} elseif ($params[2] == AM_CMD_ROOM) {
 						$this->ValidateAndSetValue(AM_TYP_SET, AM_CMD_ROOM, $params[3], null, $params[4]);
 					} elseif ($params[2] == AM_CMD_AUDIO) {
 						$this->ValidateAndSetValue(AM_TYP_SET, AM_CMD_AUDIO, $params[3], $params[4], $params[5]);
 					} else {
-						//IPSLogger_Err(__file__, "Received invalid Message".$message);
+						//$this->LogErr("Received invalid Message".$message);
 					}
 					break;
-			   case AM_TYP_GET:
-			   case AM_TYP_SET:
+				case AM_TYP_GET:
+				case AM_TYP_SET:
 					SetValue(IPS_GetObjectIDByIdent(AM_VAR_INPUTBUFFER, $this->instanceId), $message);
 					break;
+				case AM_TYP_DBG:
+					break;
+				case AM_ERR_UNKNOWNCMD1:
+				case AM_ERR_UNKNOWNCMD2:
+				case AM_ERR_UNKNOWNCMD3:
+				case AM_ERR_UNKNOWNCMD4:
+				case AM_ERR_UNKNOWNCMD5:
+					break;
 				default:
-					//$this->SetErrorText("Received invalid Message=".$message.', Type='.$params[0]);
+					$this->LogInf("Received unknown Message=".$message.', Type='.$params[0]);
 					break;
 			}
 		}

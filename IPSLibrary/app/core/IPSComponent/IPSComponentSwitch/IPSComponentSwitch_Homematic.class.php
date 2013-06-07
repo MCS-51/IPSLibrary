@@ -47,6 +47,20 @@
 		 * @param IPSModuleSwitch $module Module Object an das das aufgetretene Event weitergeleitet werden soll
 		 */
 		public function HandleEvent($variable, $value, IPSModuleSwitch $module){
+			$module->SyncState($value, $this);
+		}
+
+		/**
+		 * @public
+		 *
+		 * Funktion liefert String IPSComponent Constructor String.
+		 * String kann dazu benützt werden, das Object mit der IPSComponent::CreateObjectByParams
+		 * wieder neu zu erzeugen.
+		 *
+		 * @return string Parameter String des IPSComponent Object
+		 */
+		public function GetComponentParams() {
+			return get_class($this).','.$this->instanceId;
 		}
 
 		/**
@@ -55,8 +69,12 @@
 		 * Zustand Setzen 
 		 *
 		 * @param boolean $value Wert für Schalter
+		 * @param integer $onTime Zeit in Sekunden nach der der Aktor automatisch ausschalten soll
 		 */
-		public function SetState($value) {
+		public function SetState($value, $onTime=false) {
+			if ($onTime!==false and $value) 
+				HM_WriteValueFloat($this->instanceId, "ON_TIME", $onTime);  
+			
 			HM_WriteValueBoolean($this->instanceId, "STATE", $value);
 		}
 
@@ -68,7 +86,7 @@
 		 * @return boolean aktueller Schaltzustand  
 		 */
 		public function GetState() {
-			GetValue(IPS_GetVariableIDByName('STATE', $this->instanceId));
+			GetValue(IPS_GetVariableIDByIdent('STATE', $this->instanceId));
 		}
 
 	}
