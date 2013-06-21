@@ -248,35 +248,40 @@
 												0  	=>	-1,
 												100 	=>	0x00F0F0));
 
-	CreateProfile_Associations ('IPSWecker_Global', array(
-												0	=> c_Program_Off,
-												1 	=> c_Program_On),'', array(
-												0  =>	0x800000,
-												1 	=>	0x008000));
+    CreateProfile_Switch('IPSWecker_Global',
+                                                c_Program_Off,
+                                                c_Program_On,
+                        '',
+                                                0x800000,
+                                                0x008000);
 
-	CreateProfile_Associations ('IPSWecker_Aktiv', array(
-												0	=> c_Program_NoWeck,
-												1 	=> c_Program_Weck),'', array(
-												0  =>	0x800000,
-												1 	=>	0x008000));
+    CreateProfile_Switch ('IPSWecker_Aktiv',
+                                                c_Program_NoWeck,
+                                                c_Program_Weck,
+                        '',
+                                                0x800000,
+                                                0x008000);
 
-	CreateProfile_Associations ('IPSWecker_Frost', array(
-												0	=> c_Program_NormWeck,
-												1 	=> c_Program_PrevWeck),'', array(
-												0  =>	0x800000,
-												1 	=>	0x008000));
+    CreateProfile_Switch ('IPSWecker_Frost',
+                                                c_Program_NormWeck,
+                                                c_Program_PrevWeck,
+                        '',
+                                                0x800000,
+                                                0x008000);
 
-	CreateProfile_Associations ('IPSWecker_Schlummer', array(
-												0	=> c_Program_Off,
-												1 	=> c_Program_On),'', array(
-												0  =>	0x800000,
-												1 	=>	0x008000));
+    CreateProfile_Switch ('IPSWecker_Schlummer',
+                                                c_Program_Off,
+                                                c_Program_On,
+                        '',
+                        								0x800000,
+                                                0x008000);
 
-	CreateProfile_Associations ('IPSWecker_End', array(
-												0	=> c_Program_Off,
-												1 	=> c_Program_On),'', array(
-												0  =>	0x800000,
-												1 	=>	0x008000));
+    CreateProfile_Switch ('IPSWecker_End',
+                                                c_Program_Off,
+                                                c_Program_On,
+                        '',
+                                                0x800000,
+                                                0x008000);
 
 // Timer Event erstellen
 	CreateTimer_Profile ('Timer_Event', $ScriptIdTimer, 0, 0, 0, false);
