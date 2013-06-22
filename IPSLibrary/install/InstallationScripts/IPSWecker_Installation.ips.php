@@ -391,7 +391,7 @@
 
 		// Übersicht
 //		CreateWFCItemTabPane   ($WFC_ConfigId, $WFC_TabPaneItem,             	$WFC_TabPaneParent,           $WFC_TabPaneOrder, 	$WFC_TabPaneName, $WFC_TabPaneIcon);
-		CreateWFCItemSplitPane ($WFC_ConfigId, $WFC_TabPaneItem.'_OV',       	$WFC_TabPaneParent,          	$WFC_TabPaneOrder, 						'', 	$WFC_TabIcon1, 	0 /*Vertical*/, 50 /*Hight*/, 	0 /*Target=Pane1*/, 0/*UsePixel*/, 'true');
+      CreateWFCItemSplitPane ($WFC_ConfigId, $WFC_TabPaneItem.'_OV',          $WFC_TabPaneParent,           $WFC_TabPaneOrder,  $WFC_TabPaneName,  $WFC_TabIcon1,    0 /*Vertical*/, 50 /*Hight*/,     0 /*Target=Pane1*/, 0/*UsePixel*/, 'true');
 		CreateWFCItemSplitPane ($WFC_ConfigId, $WFC_TabPaneItem.'_OVTop',    	$WFC_TabPaneItem.'_OV',       10, 						'',			 		'', 					1 /*Vertical*/, 	50 /*Width*/, 	1 /*Target=Pane2*/, 0/*UsePixel*/, 'true');
 		CreateWFCItemSplitPane ($WFC_ConfigId, $WFC_TabPaneItem.'_OVBottom', 	$WFC_TabPaneItem.'_OV',       20, 						'', 					'', 					1 /*Vertical*/, 	50 /*Width*/,  1 /*Target=Pane2*/, 0/*UsePixel*/, 'true');
 
