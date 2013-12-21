@@ -55,7 +55,7 @@
 
 			$WeckerCf 		= get_CirclyIdByCircleIdent(c_WeckerCircle.($Ass+1), WECKER_ID_WECKZEITEN);
 			$ConfId 			= get_ControlId(c_Control_Optionen, $WeckerCf);
-			$objectIds 		= explode(',',GetValue($ConfId));
+   $objectIds 		= explode(',',GetValue($ConfId));
 
 			if ($WeckerData[c_Property_Schichtgruppe] <> '' and count($WeckerData[c_Property_Schichtzyklus]) > 0){
 				IPS_LogMessage("DEBUG", "Schichtgruppe: ".$WeckerData[c_Property_Schichtgruppe]);
@@ -125,6 +125,7 @@
 		$object[c_Control_Urlaub] 			= get_ControlValue(c_Control_Urlaub, $parentId);
 		$object[c_Control_Schlummer] 		= get_ControlValue(c_Control_Schlummer, $parentId);
 		$object[c_Control_End] 				= get_ControlValue(c_Control_End, $parentId);
+		$object[c_Control_Google] 			= get_ControlValue(c_Control_Google, $parentId);
 //		$object[c_Control_Uebersicht] 	= get_ControlValue(c_Control_Uebersicht, $parentId);
 		$object[c_Control_Urlaubszeit] 	= get_ControlValue(c_Control_Urlaubszeit, $parentId);
 
@@ -172,6 +173,7 @@
 		$object[c_Control_Schlummer] 		= $objectIds[11];
 		$object[c_Control_End] 				= $objectIds[12];
 
+		$object[c_Control_Google]			= get_ControlValue(c_Control_Google, $CircleId);
 		$object[c_Control_Urlaubszeit] 	= get_ControlValue(c_Control_Urlaubszeit, $CircleId);
 		$object['Uebersicht'] = get_ControlValue(c_Control_Uebersicht, $CircleId);
 
@@ -236,6 +238,7 @@
 			if ((($wecker_aktiv) or ($wecker_urlaub) or ($wecker_feiertag))  and ($wecker_aktiv_all)){
 					if (($wecker_frost) and ($WeckerConfig[$CircleIdent][c_Property_FrostSensor] !=='')) $FrostTime = $ParamsFrostTime;
 					set_NextTimerEvent($WeckerName, $wecker_zeit, $FrostTime);
+
 			}
 		}
 	}
@@ -251,16 +254,33 @@
 
 		for ($i = 0; $i < 7; $i++){
 			$TimerId = IPS_GetEventIDByName($WeckerName."_".$i, WECKER_ID_TIMER);
-			$eventtime=IPS_GetEvent($TimerId)['CyclicTimeFrom'];
+
+			IF (IPS_GetKernelVersion() == "3.10"){
+	         $eventtimearr	= array();
+				$eventtimearr=IPS_GetEvent($TimerId)['CyclicTimeFrom'];
+				$eventtime = mktime($eventtimearr['Hour'], $eventtimearr['Minute'], 0);
+			}else{
+				$eventtime 		= IPS_GetEvent($TimerId)['CyclicTimeFrom'];
+			}
+
 			$eventaktiv=IPS_GetEvent($TimerId)['EventActive'];
 
 			if ((($zeit-$Toleranz) < $eventtime) and (($zeit+$Toleranz) > $eventtime) and  ($eventaktiv == true )){
 				break;
 			}
 			elseif ($eventaktiv == false ){
-				if (!IPS_SetEventCyclicTimeBounds($TimerId, $zeit, 0)) {
-					Error ("IPS_SetEventCyclicTimeBounds $TimerId $zeit failed !!!");
-				}
+				IF (IPS_GetKernelVersion() == "3.10"){
+					if (!IPS_SetEventCyclicTimeFrom($TimerId, intval(date('H',$zeit)), intval(date('i',$zeit)), 0)) {
+						Error ("IPS_SetEventCyclicTimeBounds $TimerId $zeit failed !!!");
+					}
+					if (!IPS_SetEventCyclicDateFrom($TimerId, 0, 0, 0)) {
+						Error ("IPS_SetEventCyclicTimeBounds $TimerId Date failed !!!");
+					}
+				}else{
+					if (!IPS_SetEventCyclicTimeBounds($TimerId, $zeit, 0)) {
+						Error ("IPS_SetEventCyclicTimeBounds $TimerId $zeit failed !!!");
+					}
+	 			}
 				if (!IPS_SetEventActive($TimerId, true)){
 					Error ("IPS_SetEventActive $TimerId true failed !!!");
 				}
@@ -571,6 +591,7 @@
 		SetValue(get_ControlId(c_Control_Urlaub, $parentId), $Config['Circle'][c_Control_Urlaub]);
 		SetValue(get_ControlId(c_Control_Schlummer, $parentId), $Config['Circle'][c_Control_Schlummer]);
 		SetValue(get_ControlId(c_Control_End, $parentId), $Config['Circle'][c_Control_End]);
+		SetValue(get_ControlId(c_Control_Google, $parentId), $Config['Circle'][c_Control_Google]);
 
 		SetValue(get_ControlId(c_Control_Urlaubszeit, $parentId), $Config['Circle'][c_Control_Urlaubszeit]);
 		SetValue(get_ControlId(c_Control_Uebersicht, $parentId), $Config['Circle'][c_Control_Uebersicht]);
@@ -637,6 +658,7 @@
 
 	// ----------------------------------------------------------------------------------------------------------------------------
 	function IPSWecker_ChangeLMinute($ControlId, $Value) {
+IPS_LogMessage("IPS_WECKER","IPSWecker_ChangeLMinute");
 		SetValueInteger ($ControlId,$Value);
 
 		$parentId 		= get_CirclyIdByControlId($ControlId);
@@ -652,6 +674,7 @@
 		$UeberValue	= set_Overview($parentId, $CircleId);
 		set_ControlValue(c_Control_Uebersicht, $parentId, $UeberValue);
 		set_TimerEvents($parentId, $CircleId);
+IPS_LogMessage("IPS_WECKER","set_TimerEvents: $parentId, $CircleId ");
 	}
 
 
@@ -788,7 +811,25 @@
 		set_TimerEvents($parentId, $CircleId);
 
 		$UeberValue	= get_ControlValue(c_Control_Uebersicht, $CircleId);
-		set_ControlValue(c_Control_Uebersicht, 	$parentId, $UeberValue);
+		set_ControlValue(c_Control_Uebersicht, $parentId, $UeberValue);
+
+	}
+
+	// ----------------------------------------------------------------------------------------------------------------------------
+	function IPSWecker_ChangeGoogleState($ControlId, $Value) {
+		SetValueInteger  ($ControlId,$Value);
+
+		$parentId 		= get_CirclyIdByControlId($ControlId);
+		$NameId			= get_ControlId(c_Control_Name,$parentId);
+		$NameValue		= GetValueInteger($NameId)+1;
+		$CircleId 		= get_CirclyIdByCircleIdent(c_WeckerCircle.$NameValue, WECKER_ID_WECKZEITEN);
+		$GoogleId 		= get_ControlId(c_Control_Google, $CircleId);
+
+		SetValueInteger  ($GoogleId,$Value);
+		set_ConfigGlobal($parentId, $CircleId);
+
+		$UeberValue	= get_ControlValue(c_Control_Uebersicht, $CircleId);
+		set_ControlValue(c_Control_Uebersicht, $parentId, $UeberValue);
 
 	}
 
@@ -942,6 +983,7 @@
 		$wecker_aktiv_all 	= $objectIds[10];
 		$wecker_snooze 	   = $objectIds[11];
 		$wecker_end 			= $objectIds[12];
+		$wecker_google       = GetValueFormatted(get_ControlId(c_Control_Google, $CircleId));// get_ControlValue(c_Control_Google,	$CircleId);
 		$wecker_name 			= get_CirclyNameByID($CircleId);
 		$wecker_urlaubszeit 	= get_ControlValue(c_Control_Urlaubszeit,	$CircleId);
 
@@ -1008,8 +1050,16 @@
 			if($wecker_aktiv_all) 	$farbe_end = "		<td style='background: #008000;' colspan='1' align='center'>";
 			if(!$wecker_aktiv_all)  $farbe_end = "		<td style='background: #002000;' colspan='1' align='center'>";
 		}
-
-
+/*
+		if($wecker_google == c_Program_GoogleOff)	{
+			if($wecker_aktiv_all) 	$farbe_google = "		<td style='background: #880000;' colspan='1' align='center'>";
+			if(!$wecker_aktiv_all)  $farbe_google = "		<td style='background: #400000;' colspan='1' align='center'>";
+		}
+		else {
+			if($wecker_aktiv_all) 	$farbe_google = "		<td style='background: #008000;' colspan='1' align='center'>";
+			if(!$wecker_aktiv_all)  $farbe_google = "		<td style='background: #002000;' colspan='1' align='center'>";
+		}
+*/
 
 		for ($tag = 0; $tag < 7; $tag++){
 			if ($tag == 0) $wecker_tag = c_Control_Mo;
@@ -1071,9 +1121,12 @@
 			case 5:
 					$html.="		<td style='width: 100px; border: 0px;' align='center'></td>\n";
 					$html.="		<td align='center'>".c_WFC_End."</td>\n";
-					$html.="$farbe_end $wecker_end</td>\n";
+					$html.="$farbe_end $wecker_end </td>\n";
 				break;
 			case 6:
+//					$html.="		<td style='width: 100px; border: 0px;' align='center'></td>\n";
+//					$html.="		<td align='center'>".c_WFC_Google."</td>\n";
+//					$html.="$farbe_google $wecker_google </td>\n";
 				break;
 			case 7:
 				break;

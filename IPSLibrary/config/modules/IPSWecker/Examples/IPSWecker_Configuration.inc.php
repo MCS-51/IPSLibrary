@@ -107,11 +107,15 @@
 					c_Property_EndTime  		  =>   60,           Zeit (Minuten) nach Weckzeit für weitere Aktion. Gedacht zum abschalten von Licht Radio, falls man nicht da war zum wecken.
 					c_Property_Schichtgruppe  =>   '',           Schichtbetrieb. Alle Schichtzeiten die zusammen gehören müssen die gleich Nr. Eintragen. '' = deaktiviert z.B. Papa die '1', Mama die'2'
 					c_Property_Schichtzyklus  =>   array(),      Kalenderwochen als Integer in dem dieser Wecker automatisch eingeschaltet wird. Voraussetzung ist Schichtgruppe ist nicht ''.
+  					c_Property_GoogleKalender =>   array(        Google Kalender Konfiguration
+					  c_Property_User_ID =>'',                   UserID = Google Kalender Email Adresse
+					  c_Property_MagicCookie=>'',                Google Kalender Magic Cookie
+					  ), 
 		       ));
 		  }
 	* @endcode
 	*
-	* @return string Liefert Array mit Bewässerungs Kreisen
+	* ACHTUNG GOOGLE KALENDER WIRD ZUR ZEIT NICHT AUSGEWERTET! Kommt vielleicht irgendwann
 	*/
 
 	function get_WeckerConfiguration() {
@@ -125,7 +129,8 @@
 				c_Property_SnoozeTime     =>   5,
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   1,
-				c_Property_Schichtzyklus  =>   array(),
+				c_Property_Schichtzyklus  =>   array(1,4,7,13,16,19,22,25,28,31,34,37,40,43,46,49,52),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'2'  =>	array(
 				c_Property_Name           =>   'Papa Schicht 2',
@@ -136,7 +141,8 @@
 				c_Property_SnoozeTime     =>   5
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   1,
-				c_Property_Schichtzyklus  =>   array(),
+				c_Property_Schichtzyklus  =>   array(2,5,8,11,14,17,20,23,26,29,32,35,38,41,44,47,50),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'3'  =>	array(
 				c_Property_Name           =>   'Papa Schicht 3',
@@ -147,7 +153,8 @@
 				c_Property_SnoozeTime     =>   5,
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   1,
-				c_Property_Schichtzyklus  =>   array(),
+				c_Property_Schichtzyklus  =>   array(3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'4'  =>	array(
 				c_Property_Name           =>   'Mama Schicht1',
@@ -159,6 +166,7 @@
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   2,
 				c_Property_Schichtzyklus  =>   array(),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'5'  =>	array(
 				c_Property_Name           =>   'Mama Schicht2',
@@ -170,6 +178,7 @@
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   2,
 				c_Property_Schichtzyklus  =>   array(),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'6'  =>	array(
 				c_Property_Name           =>   'Katrin',
@@ -181,6 +190,7 @@
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   '',
 				c_Property_Schichtzyklus  =>   array(),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'7'  =>	array(
 				c_Property_Name           =>   'Peter',
@@ -192,6 +202,7 @@
 				c_Property_EndTime  		  =>   5,
             c_Property_Schichtgruppe  =>   '',
 				c_Property_Schichtzyklus  =>   array(),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 		);
 	}

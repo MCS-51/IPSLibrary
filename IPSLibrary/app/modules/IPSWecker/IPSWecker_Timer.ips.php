@@ -39,7 +39,13 @@
 
 			$CircleName = substr(IPS_GetName($eventId),0, strlen(IPS_GetName($eventId))-2);
 			$CircleId 	= get_CirclyIdByCircleIdent($CircleName, WECKER_ID_WECKZEITEN);
-			$eventTime 	= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+			IF (IPS_GetKernelVersion() == "3.10"){
+	         $eventtimearr	= array();
+				$eventtimearr	= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+				$eventTime 		= mktime($eventtimearr['Hour'], $eventtimearr['Minute'], 0);
+			}else{
+				$eventTime 		= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+			}
 
 			$wecker     = AddConfiguration($CircleId);
 			IPSLogger_Dbg(__file__, 'Event: Auslösung prüfen für '.$wecker['Property']['Name'].' ('.$wecker['Circle']['Name'].')');
@@ -62,10 +68,22 @@
 
 													// --------------- Neue Eventzeit setzen -------------------
 													if ($wecker['Circle'][c_Control_Schlummer] == true){
-															IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_SnoozeTime]*60), 0);
+															IF (IPS_GetKernelVersion() == "3.10"){
+																$Hour = date("H", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_SnoozeTime]*60));
+																$Minute = date("i", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_SnoozeTime]*60));
+															   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+															}else{
+																IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_SnoozeTime]*60), 0);
+															}
 													}
 													elseif($wecker['Circle'][c_Control_End] == true){
-															IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_EndTime]*60), 0);
+															IF (IPS_GetKernelVersion() == "3.10"){
+																$Hour = date("H", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_EndTime]*60));
+																$Minute = date("i", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_EndTime]*60));
+															   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+															}else{
+																IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60)+($wecker['Property'][c_Property_EndTime]*60), 0);
+															}
 													}
 													IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
 													// --------------- Aktion -------------------
@@ -75,12 +93,24 @@
 													$CircleName($CircleId, $wecker['Property'][c_Property_Name], $eventMode);
 											} else {
 													IPSLogger_Dbg(__file__, 'Wecker auf Normalzeit, da kein Frost '.$wecker['Property'][c_Property_Name]);
-													IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+													IF (IPS_GetKernelVersion() == "3.10"){
+														$Hour = date("H", $CircleTime);
+														$Minute = date("i", $CircleTime);
+													   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+													}else{
+														IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+													}
 											}
 									} else {
 											IPSLogger_Err(__file__, 'Frostsensor '.$wecker['Property'][c_Property_FrostSensor].' nicht vorhanden '.$wecker['Property'][c_Property_Name]);
 											IPSWecker_Log('FEHLER: Frostsensor '.$wecker['Property'][c_Property_FrostSensor].' nicht vorhanden '.$wecker['Property'][c_Property_Name]);
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime);
+												$Minute = date("i", $CircleTime);
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+											}
 									}
 							}
 
@@ -89,13 +119,31 @@
 									IPSLogger_Dbg(__file__, 'AlarmTime auslösung '.$wecker['Property'][c_Property_Name]);
 									// --------------- Neue Eventzeit setzen -------------------
 									if ($wecker['Circle'][c_Control_Schlummer] == true){
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime+($wecker['Property'][c_Property_SnoozeTime]*60), 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime+($wecker['Property'][c_Property_SnoozeTime]*60));
+												$Minute = date("i", $CircleTime+($wecker['Property'][c_Property_SnoozeTime]*60));
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime+($wecker['Property'][c_Property_SnoozeTime]*60), 0);
+											}
 									}
 									elseif($wecker['Circle'][c_Control_End] == true){
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime+($wecker['Property'][c_Property_EndTime]*60), 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime+($wecker['Property'][c_Property_EndTime]*60));
+												$Minute = date("i", $CircleTime+($wecker['Property'][c_Property_EndTime]*60));
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime+($wecker['Property'][c_Property_EndTime]*60), 0);
+											}
 									}
 									elseif($wecker['Circle'][c_Control_Frost] == true){
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60));
+												$Minute = date("i", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60));
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
+											}
 									}
 									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
 									if ($wecker['Active'] == true){
@@ -113,13 +161,31 @@
 									IPSLogger_Dbg(__file__, 'SnoozeTime auslösung '.$wecker['Property'][c_Property_Name]);
 									// --------------- Neue Eventzeit setzen -------------------
 									if ($wecker['Circle'][c_Control_End] == true){
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime+($wecker['Property'][c_Property_EndTime]*60), 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime+($wecker['Property'][c_Property_EndTime]*60));
+												$Minute = date("i", $CircleTime+($wecker['Property'][c_Property_EndTime]*60));
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime+($wecker['Property'][c_Property_EndTime]*60), 0);
+											}
 									}
 									elseif ($wecker['Circle'][c_Control_Frost] == true) {
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60));
+												$Minute = date("i", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60));
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
+											}
 									}
 									else {
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime);
+												$Minute = date("i", $CircleTime);
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+											}
 									}
 									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
 									if ($wecker['Circle'][c_Control_Schlummer] == true){
@@ -137,10 +203,22 @@
 									IPSLogger_Dbg(__file__, 'EndTime auslösung '.$wecker['Property'][c_Property_Name]);
 									// --------------- Neue Eventzeit setzen -------------------
 									if ($wecker['Circle'][c_Control_Frost] == true){
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60));
+												$Minute = date("i", $CircleTime-($wecker['Property'][c_Property_FrostTime]*60));
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
+											}
 									}
 									else {
-											IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+											IF (IPS_GetKernelVersion() == "3.10"){
+												$Hour = date("H", $CircleTime);
+												$Minute = date("i", $CircleTime);
+											   IPS_SetEventCyclicTimeFrom($eventId, intval($Hour), intval($Minute), 0);
+											}else{
+												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
+											}
 									}
 									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
 									if ($wecker['Circle'][c_Control_End] == true){

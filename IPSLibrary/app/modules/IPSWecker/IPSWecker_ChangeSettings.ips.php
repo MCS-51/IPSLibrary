@@ -69,6 +69,10 @@
 			   IPSWecker_ChangeBoolean($instanceId, $_IPS['VALUE']);
 			   break;
 
+			case c_Control_Google:
+			   IPSWecker_ChangeGoogleState($instanceId, $_IPS['VALUE']);
+			   break;
+
 			case c_Control_Name:
 				IPSWecker_ChangeWecker($instanceId, $_IPS['VALUE']);
 				break;

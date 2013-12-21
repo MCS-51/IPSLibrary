@@ -107,11 +107,15 @@
 					c_Property_EndTime  		  =>   60,           Zeit (Minuten) nach Weckzeit für weitere Aktion. Gedacht zum abschalten von Licht Radio, falls man nicht da war zum wecken.
 					c_Property_Schichtgruppe  =>   '',           Schichtbetrieb. Alle Schichtzeiten die zusammen gehören müssen die gleich Nr. Eintragen. '' = deaktiviert z.B. Papa die '1', Mama die'2'
 					c_Property_Schichtzyklus  =>   array(),      Kalenderwochen als Integer in dem dieser Wecker automatisch eingeschaltet wird. Voraussetzung ist Schichtgruppe ist nicht ''.
+  					c_Property_GoogleKalender =>   array(        Google Kalender Konfiguration
+					  c_Property_User_ID =>'',                   UserID = Google Kalender Email Adresse
+					  c_Property_MagicCookie=>'',                Google Kalender Magic Cookie
+					  ),
 		       ));
 		  }
 	* @endcode
 	*
-	* @return string Liefert Array mit Bewässerungs Kreisen
+	* ACHTUNG GOOGLE KALENDER WIRD ZUR ZEIT NICHT AUSGEWERTET! Kommt vielleicht irgendwann
 	*/
 
 	function get_WeckerConfiguration() {
@@ -126,6 +130,7 @@
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   '',
 				c_Property_Schichtzyklus  =>   array(),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 			c_WeckerCircle.'2'  =>	array(
 				c_Property_Name           =>   'Wochenende',
@@ -137,6 +142,7 @@
 				c_Property_EndTime  		  =>   60,
             c_Property_Schichtgruppe  =>   '',
 				c_Property_Schichtzyklus  =>   array(),
+				c_Property_GoogleKalender =>   array(c_Property_User_ID =>'', c_Property_MagicCookie=>'',),
 			),
 		);
 	}

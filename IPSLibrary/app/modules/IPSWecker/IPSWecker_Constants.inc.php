@@ -78,6 +78,7 @@
 	define ("c_Control_Fr",						"Freitag");
 	define ("c_Control_Sa",						"Samstag");
 	define ("c_Control_So",						"Sonntag");
+	define ("c_Control_Google",				"Google Kalender");
 //	define ("c_Control_Mo_Active",			"Mo_Active");
 //	define ("c_Control_Di_Active",			"Di_Active");
 //	define ("c_Control_Mi_Active",			"Mi_Active");
@@ -135,6 +136,13 @@
 	define ("c_Property_Schichtgruppe", 'Schichtgruppe');
 	define ("c_Property_Schichtzyklus", 'Schichtzyklus');
 
+	define ("c_Property_GoogleKalender", 'Google Kalender');
+	define ("c_Property_User_ID",        'UserID');
+	define ("c_Property_MagicCookie",    'MagicCookie');
+	define ("c_Program_GoogleOff",  		 'Keine');
+	define ("c_Program_GoogleVorTermin", 'Nur frühere');
+	define ("c_Program_GoogleGanzTag",   'Alle');
+
 
 //Webfront
 	define ("c_WFC_Global",  				'Wochenwecker');
@@ -151,7 +159,9 @@
 	define ("c_WFC_End",              	'Endefunktion');
 	define ("c_WFC_Uebersicht",         'Übersicht');
 	define ("c_WFC_AlarmName",        	'Wecker Name');
+	define ("c_WFC_Google",					'Google Kalender');
 //	define ("c_WFC_",  					'');
+
 
 
 
