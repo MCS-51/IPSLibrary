@@ -125,7 +125,7 @@
 		$object[c_Control_Urlaub] 			= get_ControlValue(c_Control_Urlaub, $parentId);
 		$object[c_Control_Schlummer] 		= get_ControlValue(c_Control_Schlummer, $parentId);
 		$object[c_Control_End] 				= get_ControlValue(c_Control_End, $parentId);
-		$object[c_Control_Google] 			= get_ControlValue(c_Control_Google, $parentId);
+//		$object[c_Control_Google] 			= get_ControlValue(c_Control_Google, $parentId);
 //		$object[c_Control_Uebersicht] 	= get_ControlValue(c_Control_Uebersicht, $parentId);
 		$object[c_Control_Urlaubszeit] 	= get_ControlValue(c_Control_Urlaubszeit, $parentId);
 
@@ -173,7 +173,7 @@
 		$object[c_Control_Schlummer] 		= $objectIds[11];
 		$object[c_Control_End] 				= $objectIds[12];
 
-		$object[c_Control_Google]			= get_ControlValue(c_Control_Google, $CircleId);
+//		$object[c_Control_Google]			= get_ControlValue(c_Control_Google, $CircleId);
 		$object[c_Control_Urlaubszeit] 	= get_ControlValue(c_Control_Urlaubszeit, $CircleId);
 		$object['Uebersicht'] = get_ControlValue(c_Control_Uebersicht, $CircleId);
 
@@ -591,7 +591,7 @@
 		SetValue(get_ControlId(c_Control_Urlaub, $parentId), $Config['Circle'][c_Control_Urlaub]);
 		SetValue(get_ControlId(c_Control_Schlummer, $parentId), $Config['Circle'][c_Control_Schlummer]);
 		SetValue(get_ControlId(c_Control_End, $parentId), $Config['Circle'][c_Control_End]);
-		SetValue(get_ControlId(c_Control_Google, $parentId), $Config['Circle'][c_Control_Google]);
+//		SetValue(get_ControlId(c_Control_Google, $parentId), $Config['Circle'][c_Control_Google]);
 
 		SetValue(get_ControlId(c_Control_Urlaubszeit, $parentId), $Config['Circle'][c_Control_Urlaubszeit]);
 		SetValue(get_ControlId(c_Control_Uebersicht, $parentId), $Config['Circle'][c_Control_Uebersicht]);
@@ -983,7 +983,7 @@ IPS_LogMessage("IPS_WECKER","set_TimerEvents: $parentId, $CircleId ");
 		$wecker_aktiv_all 	= $objectIds[10];
 		$wecker_snooze 	   = $objectIds[11];
 		$wecker_end 			= $objectIds[12];
-		$wecker_google       = GetValueFormatted(get_ControlId(c_Control_Google, $CircleId));// get_ControlValue(c_Control_Google,	$CircleId);
+//		$wecker_google       = GetValueFormatted(get_ControlId(c_Control_Google, $CircleId));// get_ControlValue(c_Control_Google,	$CircleId);
 		$wecker_name 			= get_CirclyNameByID($CircleId);
 		$wecker_urlaubszeit 	= get_ControlValue(c_Control_Urlaubszeit,	$CircleId);
 
