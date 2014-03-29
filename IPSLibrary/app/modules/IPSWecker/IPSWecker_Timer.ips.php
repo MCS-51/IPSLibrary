@@ -39,7 +39,7 @@
 
 			$CircleName = substr(IPS_GetName($eventId),0, strlen(IPS_GetName($eventId))-2);
 			$CircleId 	= get_CirclyIdByCircleIdent($CircleName, WECKER_ID_WECKZEITEN);
-			IF (IPS_GetKernelVersion() == "3.10"){
+			IF (IPS_GetKernelVersion() >= "3.10"){
 	         $eventtimearr	= array();
 				$eventtimearr	= IPS_GetEvent($eventId)['CyclicTimeFrom'];
 				$eventTime 		= mktime($eventtimearr['Hour'], $eventtimearr['Minute'], 0);
@@ -145,7 +145,16 @@
 												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime-($wecker['Property'][c_Property_FrostTime]*60), 0);
 											}
 									}
-									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
+
+									IF (IPS_GetKernelVersion() >= "3.10"){
+							         $neweventtimearr	= array();
+										$neweventtimearr	= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+										$neweventTime 		= mktime($neweventtimearr['Hour'], $neweventtimearr['Minute'], 0);
+									}else{
+										$neweventTime 		= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+									}
+									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i', $neweventTime).' für '.IPS_GetName($eventId));
+
 									if ($wecker['Active'] == true){
 											// --------------- Aktion -------------------
 											$eventMode = "AlarmTime";
