@@ -196,7 +196,14 @@
 												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
 											}
 									}
-									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
+									IF (IPS_GetKernelVersion() >= "3.10"){
+							         $neweventtimearr	= array();
+										$neweventtimearr	= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+										$neweventTime 		= mktime($neweventtimearr['Hour'], $neweventtimearr['Minute'], 0);
+									}else{
+										$neweventTime 		= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+									}
+									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i', $neweventTime).' für '.IPS_GetName($eventId));
 									if ($wecker['Circle'][c_Control_Schlummer] == true){
 											// --------------- Aktion -------------------
 											$eventMode = "SnoozeTime";
@@ -229,7 +236,14 @@
 												IPS_SetEventCyclicTimeBounds($eventId, $CircleTime, 0);
 											}
 									}
-									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i',IPS_GetEvent($eventId)['CyclicTimeFrom']).' für '.IPS_GetName($eventId));
+									IF (IPS_GetKernelVersion() >= "3.10"){
+							         $neweventtimearr	= array();
+										$neweventtimearr	= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+										$neweventTime 		= mktime($neweventtimearr['Hour'], $neweventtimearr['Minute'], 0);
+									}else{
+										$neweventTime 		= IPS_GetEvent($eventId)['CyclicTimeFrom'];
+									}
+									IPSLogger_Dbg(__file__, 'Neue EventTime: '.Date('H:i', $neweventTime).' für '.IPS_GetName($eventId));
 									if ($wecker['Circle'][c_Control_End] == true){
 											// --------------- Aktion -------------------
 											$eventMode = "EndTime";
