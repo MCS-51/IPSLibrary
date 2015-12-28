@@ -55,7 +55,7 @@
 
 			$WeckerCf 		= get_CirclyIdByCircleIdent(c_WeckerCircle.($Ass+1), WECKER_ID_WECKZEITEN);
 			$ConfId 			= get_ControlId(c_Control_Optionen, $WeckerCf);
-   $objectIds 		= explode(',',GetValue($ConfId));
+   		$objectIds 		= explode(',',GetValue($ConfId));
 
 			if ($WeckerData[c_Property_Schichtgruppe] <> '' and count($WeckerData[c_Property_Schichtzyklus]) > 0){
 				IPS_LogMessage("DEBUG", "Schichtgruppe: ".$WeckerData[c_Property_Schichtgruppe]);
@@ -112,11 +112,11 @@
 		$parentId = IPSUtil_ObjectIDByPath('Program.IPSLibrary.data.modules.IPSWecker');
 
 		$object = array();
-		$object['ControlId']             = $parentId;
+		$object['ControlId']        	    = $parentId;
 		$object[c_Control_Name] 			= get_ControlValue(c_Control_Name, $parentId);
 		$object[c_Control_LTag] 			= GetValueFormatted(get_ControlId(c_Control_LTag, $parentId));
-		$object[c_Control_LStunde] 		= GetValueFormatted(get_ControlId(c_Control_LStunde, $parentId));
-		$object[c_Control_LMinute] 		= GetValueFormatted(get_ControlId(c_Control_LMinute, $parentId));
+		$object[c_Control_LStunde] 			= GetValueFormatted(get_ControlId(c_Control_LStunde, $parentId));
+		$object[c_Control_LMinute] 			= GetValueFormatted(get_ControlId(c_Control_LMinute, $parentId));
 		$object[c_Control_Global] 			= get_ControlValue(c_Control_Global, $parentId);
 		$object[c_Control_Active] 			= get_ControlValue(c_Control_Active, $parentId);
 		$object[c_Control_Feiertag] 		= get_ControlValue(c_Control_Feiertag, $parentId);
@@ -126,8 +126,8 @@
 		$object[c_Control_Schlummer] 		= get_ControlValue(c_Control_Schlummer, $parentId);
 		$object[c_Control_End] 				= get_ControlValue(c_Control_End, $parentId);
 //		$object[c_Control_Google] 			= get_ControlValue(c_Control_Google, $parentId);
-//		$object[c_Control_Uebersicht] 	= get_ControlValue(c_Control_Uebersicht, $parentId);
-		$object[c_Control_Urlaubszeit] 	= get_ControlValue(c_Control_Urlaubszeit, $parentId);
+//		$object[c_Control_Uebersicht] 		= get_ControlValue(c_Control_Uebersicht, $parentId);
+		$object[c_Control_Urlaubszeit]	 	= get_ControlValue(c_Control_Urlaubszeit, $parentId);
 
 		return $object;
 	}
@@ -202,14 +202,14 @@
 
 	// ----------------------------------------------------------------------------------------------------------------------------
 	function set_TimerEvents($parentId, $CircleId){
-		$ConfId 				= get_ControlId(c_Control_Optionen, $CircleId);
-		$WeckerName			= IPS_GetName($CircleId);
-		$WeckerConfig      = get_WeckerConfiguration();
+		$ConfId 				   = get_ControlId(c_Control_Optionen, $CircleId);
+		$WeckerName			   = IPS_GetName($CircleId);
+		$WeckerConfig        = get_WeckerConfiguration();
 
 		$ConfId 					= get_ControlId(c_Control_Optionen,	$CircleId);
 		$objectIds 				= explode(',',GetValue($ConfId));
 		$CircleIdent      	= IPS_GetName($CircleId);
-		$ParamsFrostTime 	 = $WeckerConfig[$CircleIdent][c_Property_FrostTime];
+		$ParamsFrostTime 	   = $WeckerConfig[$CircleIdent][c_Property_FrostTime];
 
 		$wecker_feiertag 		= $objectIds[7];
 		$wecker_urlaub 		= $objectIds[8];
@@ -224,20 +224,20 @@
 		deaktivate_AllTimerEvents($WeckerName);
 
 		for ($tag = 0; $tag < 7; $tag++){
-			if ($tag == 0) $wecker_tag = c_Control_Mo;
-			if ($tag == 1) $wecker_tag = c_Control_Di;
-			if ($tag == 2) $wecker_tag = c_Control_Mi;
-			if ($tag == 3) $wecker_tag = c_Control_Do;
-			if ($tag == 4) $wecker_tag = c_Control_Fr;
-			if ($tag == 5) $wecker_tag = c_Control_Sa;
-			if ($tag == 6) $wecker_tag = c_Control_So;
+			if ($tag == 0) { $wecker_tag = c_Control_Mo; $day = 1; }
+			if ($tag == 1) { $wecker_tag = c_Control_Di; $day = 2; }
+			if ($tag == 2) { $wecker_tag = c_Control_Mi; $day = 4; }
+			if ($tag == 3) { $wecker_tag = c_Control_Do; $day = 8; }
+			if ($tag == 4) { $wecker_tag = c_Control_Fr; $day = 16; }
+			if ($tag == 5) { $wecker_tag = c_Control_Sa; $day = 32; }
+			if ($tag == 6) { $wecker_tag = c_Control_So; $day = 64; }
 
-			$wecker_aktiv 		= $objectIds[$tag];
+			$wecker_aktiv 	= $objectIds[$tag];
 			$wecker_zeit	= get_ControlValue($wecker_tag, 	$CircleId);
 
 			if ((($wecker_aktiv) or ($wecker_urlaub) or ($wecker_feiertag))  and ($wecker_aktiv_all)){
 					if (($wecker_frost) and ($WeckerConfig[$CircleIdent][c_Property_FrostSensor] !=='')) $FrostTime = $ParamsFrostTime;
-					set_NextTimerEvent($WeckerName, $wecker_zeit, $FrostTime);
+					set_NextTimerEvent($WeckerName."_".$tag, $wecker_zeit, $FrostTime, $day);
 
 			}
 		}
@@ -245,48 +245,51 @@
 
 
 	// ----------------------------------------------------------------------------------------------------------------------------
-	function set_NextTimerEvent($WeckerName, $wecker_zeit, $FrostTime){			//Aufruf von IPSWecker_Timer
+	function set_NextTimerEvent($WeckerName, $wecker_zeit, $FrostTime, $day){			//Aufruf von IPSWecker_Timer
 
-			$Toleranz =2;        //Toleranzzeit in Sekunden. Timerevent auslesen hat zum Teil schwankun von 1 Sekunden. Rundungsfehler?
-			$Hour = substr($wecker_zeit,0,2);
-			$Minute =substr($wecker_zeit,3,2);
-			$zeit = mktime($Hour, $Minute, 0)-($FrostTime*60);
+			$Toleranz = 2;        //Toleranzzeit in Sekunden. Timerevent auslesen hat zum Teil schwankun von 1 Sekunden. Rundungsfehler?
+			$Hour     = substr($wecker_zeit,0,2);
+			$Minute   = substr($wecker_zeit,3,2);
+			$zeit     = mktime($Hour, $Minute, 0)-($FrostTime*60);
 
-		for ($i = 0; $i < 7; $i++){
-			$TimerId = IPS_GetEventIDByName($WeckerName."_".$i, WECKER_ID_TIMER);
+//		for ($i = 0; $i <= 6; $i++){
+			$TimerId = IPS_GetEventIDByName($WeckerName, WECKER_ID_TIMER);
 
 			IF (IPS_GetKernelVersion() == "3.10"){
 	         $eventtimearr	= array();
-				$eventtimearr=IPS_GetEvent($TimerId)['CyclicTimeFrom'];
-				$eventtime = mktime($eventtimearr['Hour'], $eventtimearr['Minute'], 0);
+				$eventtimearr  = IPS_GetEvent($TimerId)['CyclicTimeFrom'];
+				$eventtime     = mktime($eventtimearr['Hour'], $eventtimearr['Minute'], 0);
 			}else{
 				$eventtime 		= IPS_GetEvent($TimerId)['CyclicTimeFrom'];
 			}
 
-			$eventaktiv=IPS_GetEvent($TimerId)['EventActive'];
+			$eventaktiv = IPS_GetEvent($TimerId)['EventActive'];
 
 			if ((($zeit-$Toleranz) < $eventtime) and (($zeit+$Toleranz) > $eventtime) and  ($eventaktiv == true )){
-				break;
+//				break;
 			}
 			elseif ($eventaktiv == false ){
 				IF (IPS_GetKernelVersion() == "3.10"){
-					if (!IPS_SetEventCyclicTimeFrom($TimerId, intval(date('H',$zeit)), intval(date('i',$zeit)), 0)) {
+					if (!IPS_SetEventCyclicTimeFrom($TimerId, intval(date('H',$zeit)), intval(date('i',$zeit)), 0)) {  // konfiguriert die Startzeit
 						Error ("IPS_SetEventCyclicTimeBounds $TimerId $zeit failed !!!");
 					}
-					if (!IPS_SetEventCyclicDateFrom($TimerId, 0, 0, 0)) {
+					if (!IPS_SetEventCyclicDateFrom($TimerId, 0, 0, 0)) { 		// 	konfiguriert das Startdatum
 						Error ("IPS_SetEventCyclicTimeBounds $TimerId Date failed !!!");
 					}
 				}else{
-					if (!IPS_SetEventCyclicTimeBounds($TimerId, $zeit, 0)) {
+				   if (!IPS_SetEventCyclic($TimerId, 3 /* Wöchentlich */, 1 /* Alle x Wochen */, $day /*Wochentag*/, 0, 0 /*Zeittyp*/, 0/*Zeitintervall*/)) {
+						Error ("IPS_SetEventCyclic $TimerId failed !!!");
+				   }
+					if (!IPS_SetEventCyclicTimeBounds($TimerId, $zeit, 0)) { 	// 	konfiguriert die Zeitspanne (Zeit)
 						Error ("IPS_SetEventCyclicTimeBounds $TimerId $zeit failed !!!");
 					}
 	 			}
-				if (!IPS_SetEventActive($TimerId, true)){
+				if (!IPS_SetEventActive($TimerId, true)){                      //    aktiviert/deaktiviert ein Ereignis
 					Error ("IPS_SetEventActive $TimerId true failed !!!");
 				}
-				break;
+//				break;
 			}
-		}
+//		}
 	}
 
 	// ----------------------------------------------------------------------------------------------------------------------------
@@ -1256,9 +1259,9 @@ IPS_LogMessage("IPS_WECKER","set_TimerEvents: $parentId, $CircleId ");
 
 	// ----------------------------------------------------------------------------------------------------------------------------
   		function getHolidays($year) {
-  		
+
 			$bland				= c_Property_Bundesland;
-  		
+
     		$time = getEasterSundayTime($year);
 			$days[""] 									= 0;
 		 	$days["Neujahr"] 							= mktime(0, 0, 0, 1, 1, $year);
